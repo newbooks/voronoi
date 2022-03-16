@@ -62,6 +62,14 @@ def neighbors_vor(points):
 
 def neighbors_tri(points):
     # return a dictionary that contains a histogram of neighbor number -> counts
+    ps = np.array(points)
+    tri = Delaunay(ps)
+    point_nbr = {}
+    for simplice in tri.simpleces:
+        if simplice[0] in point_nbr:
+            point_nbr[simplice[0]].update({simplice[1], simplice[2]})
+        else:
+            point_nbr[simplice[0]] = {simplice[1], simplice[2]}
 
     return
 
