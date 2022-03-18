@@ -11,7 +11,7 @@ import random
 def draw_voronoi(points):
     vor = Voronoi(points)
     fig = voronoi_plot_2d(vor, show_points=True, show_vertices=True)
-    fig.set_size_inches(10, 10)
+    fig.set_size_inches(8, 8)
     plt.axis("equal")
 
     plt.show()
@@ -21,7 +21,7 @@ def draw_delaunay(points):
     tri = Delaunay(points)
     ps = np.array(points)
     fig = plt.figure()
-    fig.set_size_inches(10, 10)
+    fig.set_size_inches(8, 8)
     plt.axis("equal")
     plt.triplot(ps[:,0], ps[:,1], tri.simplices)
     plt.plot(ps[:,0], ps[:,1], "o")
@@ -172,7 +172,7 @@ def draw_histogram(nbrs):
         else:
             values.append(0)
     fig = plt.figure()
-    fig.set_size_inches(10, 10)
+    fig.set_size_inches(8, 8)
     plt.bar(key_range, values)
     plt.xlabel("Neighbors")
     plt.ylabel("Counts")
