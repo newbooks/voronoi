@@ -286,8 +286,10 @@ if __name__ == '__main__':
 #    draw_both(points)
 #    draw_histogram(nbrs)
 
-    nbrs = neighbors_vor_ext(points)
-#    draw_both(points)
-    draw_histogram(nbrs)
+    for p in points:
+        print("%8.3f %8.3f" % tuple(p))
 
+#    nbrs = neighbors_vor_ext(points)
+#    draw_both(points)
+#    draw_histogram(nbrs)
 
