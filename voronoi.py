@@ -69,7 +69,7 @@ def read_points(fname):
             points[ip].enclosed = True
             points[ip].vertices = [vertices[i] for i in regions[i_region]]
 
-    
+
 
     return points, vertices, ridges
 
