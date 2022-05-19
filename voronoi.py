@@ -26,6 +26,9 @@ class Ridge:
         self.points = []                # two points this edge belongs to
         self.length = 0                 # length of the edge
 
+def dvv(v1, v2):
+    return np.linalg.norm(np.array(v1) - np.array(v2))
+
 def read_points(fname):
     points = []
     vertices = []
@@ -56,6 +59,7 @@ def read_points(fname):
             vertex0 = vertices[v[0]]
             vertex1 = vertices[v[1]]
             ridge = Ridge(vertex0, vertex1)
+            ridge.length = dvv(vertex0.xy, vertex1.xy)
 
         vertices[v[0]].ridges.append(ridge)
         vertices[v[1]].ridges.append(ridge)
@@ -73,9 +77,10 @@ def read_points(fname):
             for iv in regions[i_region]:
                 vertices[iv].points.append(points[ip])
 
-
     for ir in range(len(vor.ridge_points)):
         ridges[ir].points = [points[ip] for ip in vor.ridge_points[ir]]
+        ridges[ir].points[0].neighbor_points.append(ridges[ir].points[1])   # ridge defines two mutual neighbors
+        ridges[ir].points[1].neighbor_points.append(ridges[ir].points[0])   # ridge defines two mutual neighbors
         for ip in vor.ridge_points[ir]:
             points[ip].ridges.append(ridges[ir])
 
@@ -105,6 +110,9 @@ if __name__ == '__main__':
         for r in p.ridges:
             if not r.open:
                 print("      ", [v.xy for v in r.vertices])
+        print("   Neighbors:")
+        for n in p.neighbor_points:
+            print("      ", n.xy)
 
     print("Vertices")
     for v in vertices:
@@ -121,6 +129,7 @@ if __name__ == '__main__':
     for r in ridges:
         if not r.open:
             print("   ", r.vertices[0].xy, " - ", r.vertices[1].xy)
+            print("   Length:", r.length)
             print("   Points it belongs:")
             for p in r.points:
                 print("      ", p.xy)
