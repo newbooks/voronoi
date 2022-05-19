@@ -21,6 +21,7 @@ class Vertex:
 
 class Ridge:
     def __init__(self, v1, v2):
+        self.open = False               # with an open end?
         self.vertices = [v1, v2]        # two end vertices
         self.points = []                # two points this edge belongs to
         self.length = 0                 # length of the edge
@@ -48,15 +49,16 @@ def read_points(fname):
         vertices.append(vertex)
 
     for v in vor.ridge_vertices:
-        if v[0] == -1:
-            continue
+        if v[0] == -1 or v[1] == -1:
+            ridge = Ridge(None, None)
+            ridge.open = True
         else:
-            xy0 = vertices[v[0]].xy
-        if v[1] == -1:
-            continue
-        else:
-            xy1 = vertices[v[1]].xy
-        ridge = Ridge(xy0, xy1)
+            vertex0 = vertices[v[0]]
+            vertex1 = vertices[v[1]]
+            ridge = Ridge(vertex0, vertex1)
+
+        vertices[v[0]].ridges.append(ridge)
+        vertices[v[1]].ridges.append(ridge)
         ridges.append(ridge)
 
     # make relationship
@@ -68,28 +70,59 @@ def read_points(fname):
         else:
             points[ip].enclosed = True
             points[ip].vertices = [vertices[i] for i in regions[i_region]]
+            for iv in regions[i_region]:
+                vertices[iv].points.append(points[ip])
 
+
+    for ir in range(len(vor.ridge_points)):
+        ridges[ir].points = [points[ip] for ip in vor.ridge_points[ir]]
+        for ip in vor.ridge_points[ir]:
+            points[ip].ridges.append(ridges[ir])
 
 
     return points, vertices, ridges
 
 
-
+def plot_voroni(points):
+    ps = [p.xy for p in points]
+    vor = Voronoi(ps)
+    fig = voronoi_plot_2d(vor)
+    plt.show()
+    return
 
 if __name__ == '__main__':
     inputfile = "points_9.txt"
     points, vertices, ridges = read_points(inputfile)
+
+
     print("Points")
     for p in points:
         print("   Corrdinates:", p.xy)
-        print("   Vertices:")
+        print("   Vertices of point: ")
         if p.vertices:
-            print([pv.xy for pv in p.vertices])
+            print("      ", [pv.xy for pv in p.vertices])
+        print("   Ridges of point: ")
+        for r in p.ridges:
+            if not r.open:
+                print("      ", [v.xy for v in r.vertices])
+
     print("Vertices")
     for v in vertices:
-        print(v.xy)
+        print("   Corrdinates:", v.xy)
+        print("   Points of this vertex:")
+        for p in v.points:
+            print("      ", p.xy)
+        print("   Ridges xy of this vertex:")
+        for r in v.ridges:
+            if not r.open:
+                print("      ", [vofr.xy for vofr in r.vertices])
 
     print("Ridges")
-    for v in ridges:
-        print(v.vertices[0], " - ", v.vertices[1])
+    for r in ridges:
+        if not r.open:
+            print("   ", r.vertices[0].xy, " - ", r.vertices[1].xy)
+            print("   Points it belongs:")
+            for p in r.points:
+                print("      ", p.xy)
 
+    plot_voroni(points)
