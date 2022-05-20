@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy.stats import entropy
+import math
 
 class Point:
     def __init__(self, xy):
@@ -12,6 +13,7 @@ class Point:
         self.vertices = []              # enclosing vertices
         self.ridges = []                # enclosing ridges
         self.neighbor_points = []       # neighbor points
+        self.area = 0                   # area of region if enclosed is true
 
 class Vertex:
     def __init__(self, xy):
@@ -84,54 +86,110 @@ def read_points(fname):
         for ip in vor.ridge_points[ir]:
             points[ip].ridges.append(ridges[ir])
 
-
+    # find area of each enclosed region
+    for p in points:
+        if p.enclosed:
+            area = 0.0
+            for r in p.ridges:
+                triangle_v = [p.xy, r.vertices[0].xy, r.vertices[1].xy]
+                area += get_area_3v(triangle_v)
+            p.area = area
     return points, vertices, ridges
 
+def get_area_3v(triangle_v):
+    v0 = triangle_v[0]
+    v1 = triangle_v[1]
+    v2 = triangle_v[2]
+
+    d1 = dvv(v0, v1)
+    d2 = dvv(v1, v2)
+    d3 = dvv(v0, v2)
+
+    s = 0.5*(d1 +d2 + d3)
+    A = math.sqrt(s*(s-d1)*(s-d2)*(s-d3))
+
+    return A
 
 def plot_voroni(points):
-    ps = [p.xy for p in points]
+    ps = np.array([p.xy for p in points])
     vor = Voronoi(ps)
     fig = voronoi_plot_2d(vor)
+    xmin = min(ps[:, 0])
+    xmax = max(ps[:, 0])
+    ymin = min(ps[:, 1])
+    ymax = max(ps[:, 1])
+
+    enlarge = 10
+    plt.xlim(xmin-enlarge, xmax+enlarge)
+    plt.ylim(ymin-enlarge, ymax+enlarge)
     plt.show()
     return
 
+
 if __name__ == '__main__':
-    inputfile = "points_9.txt"
+#    inputfile = "points_9.txt"
+    inputfile = "random100.txt"
+
     points, vertices, ridges = read_points(inputfile)
 
-
+    print("Verifying the data structure")
     print("Points")
     for p in points:
-        print("   Corrdinates:", p.xy)
+        print("   Point Corrdinates:", p.xy)
+        if p.enclosed:
+            print("      Enclosed: True")
+        else:
+            print("      Enclosed: False")
         print("   Vertices of point: ")
         if p.vertices:
             print("      ", [pv.xy for pv in p.vertices])
+        else:
+            print("      Open region doesn't have closing vertices.")
         print("   Ridges of point: ")
         for r in p.ridges:
             if not r.open:
                 print("      ", [v.xy for v in r.vertices])
+            else:
+                print("      Open ridge")
         print("   Neighbors:")
         for n in p.neighbor_points:
             print("      ", n.xy)
+        print("   Area:%.3f" % p.area)
+        print()
 
+    print()
     print("Vertices")
     for v in vertices:
-        print("   Corrdinates:", v.xy)
+        print("   Enclosed region Vertex Corrdinates:", v.xy)
         print("   Points of this vertex:")
         for p in v.points:
             print("      ", p.xy)
-        print("   Ridges xy of this vertex:")
+        print("   Ridges coordinates of this vertex:")
         for r in v.ridges:
             if not r.open:
                 print("      ", [vofr.xy for vofr in r.vertices])
+        print()
 
+    print()
     print("Ridges")
     for r in ridges:
         if not r.open:
-            print("   ", r.vertices[0].xy, " - ", r.vertices[1].xy)
+            print("   Ridge", r.vertices[0].xy, " - ", r.vertices[1].xy)
             print("   Length:", r.length)
             print("   Points it belongs:")
             for p in r.points:
                 print("      ", p.xy)
+            print()
+
+
+    # How chaotic is neighbor number distribution?
+    neighbor_counts_all = [len(p.neighbor_points) for p in points]
+    neighbor_counts_closed = [len(p.neighbor_points) for p in points if p.enclosed]
+    print("Neighbor(all) numbers:", neighbor_counts_all)
+    print("Neighbor(all) number distribution entropy: %.3f" % entropy(neighbor_counts_all))
+    print()
+    print("Neighbor(enclosed region) numbers:", neighbor_counts_closed)
+    print("Neighbor(enclosed region) number distribution entropy: %.3f" % entropy(neighbor_counts_closed))
+
 
     plot_voroni(points)
