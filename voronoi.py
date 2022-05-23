@@ -14,6 +14,8 @@ class Point:
         self.ridges = []                # enclosing ridges
         self.neighbor_points = []       # neighbor points
         self.area = 0                   # area of region if enclosed is true
+        self.ridge_stdev = 0            # ridge length stdev
+        self.angle_stdev = 0            # stdev of the angles of polygon composed by vetices
 
 class Vertex:
     def __init__(self, xy):
@@ -86,14 +88,29 @@ def read_points(fname):
         for ip in vor.ridge_points[ir]:
             points[ip].ridges.append(ridges[ir])
 
-    # find area of each enclosed region
     for p in points:
         if p.enclosed:
+            # find area of each enclosed region
             area = 0.0
             for r in p.ridges:
                 triangle_v = [p.xy, r.vertices[0].xy, r.vertices[1].xy]
                 area += get_area_3v(triangle_v)
             p.area = area
+
+            # find ridge lengths stdev
+            ridge_lengths = [r.length for r in p.ridges]
+            p.ridge_stdev = np.std(ridge_lengths)
+
+            # find stdev of angles
+            angles = []
+            for v in p.vertices:
+                sides = [s for s in v.ridges if s in p.ridges]
+                v1 = np.array(sides[0].vertices[1].xy) - np.array(sides[0].vertices[0].xy)
+                v2 = np.array(sides[1].vertices[1].xy) - np.array(sides[1].vertices[0].xy)
+                angles.append(avv(v1, v2))
+            p.angle_stdev = np.std(angles)
+
+
     return points, vertices, ridges
 
 def get_area_3v(triangle_v):
@@ -110,18 +127,31 @@ def get_area_3v(triangle_v):
 
     return A
 
-def plot_voroni(points):
+def avv(v1, v2):
+    "Angle between v1 to v2 in [0, pi]."
+    v1_n = np.linalg.norm(v1)
+    v2_n = np.linalg.norm(v2)
+    COS = np.dot(v1, v2) / v1_n / v2_n
+
+    return np.arccos(COS)
+
+def plot_voroni(points, center=[], enlarge=0):
     ps = np.array([p.xy for p in points])
     vor = Voronoi(ps)
     fig = voronoi_plot_2d(vor)
-    xmin = min(ps[:, 0])
-    xmax = max(ps[:, 0])
-    ymin = min(ps[:, 1])
-    ymax = max(ps[:, 1])
+    if center:
+        xmin = xmax = center[0]
+        ymin = ymax = center[1]
+    else:
+        xmin = min(ps[:, 0])
+        xmax = max(ps[:, 0])
+        ymin = min(ps[:, 1])
+        ymax = max(ps[:, 1])
 
-    enlarge = 10
-    plt.xlim(xmin-enlarge, xmax+enlarge)
-    plt.ylim(ymin-enlarge, ymax+enlarge)
+    if enlarge:
+        plt.xlim(xmin-enlarge, xmax+enlarge)
+        plt.ylim(ymin-enlarge, ymax+enlarge)
+
     plt.show()
     return
 
@@ -191,5 +221,7 @@ if __name__ == '__main__':
     print("Neighbor(enclosed region) numbers:", neighbor_counts_closed)
     print("Neighbor(enclosed region) number distribution entropy: %.3f" % entropy(neighbor_counts_closed))
 
-
+    for p in points:
+        if p.enclosed:
+            print("%8.3f %8.3f %8.3f" % (p.area, p.ridge_stdev, p.angle_stdev))
     plot_voroni(points)
