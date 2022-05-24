@@ -2,6 +2,8 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+import matplotlib.cm as cm
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy.stats import entropy
 import math
@@ -135,7 +137,7 @@ def avv(v1, v2):
 
     return np.arccos(COS)
 
-def plot_voroni(points, center=[], enlarge=0):
+def plot_voronoi(points, center=[], enlarge=0):
     ps = np.array([p.xy for p in points])
     vor = Voronoi(ps)
     fig = voronoi_plot_2d(vor)
@@ -155,6 +157,38 @@ def plot_voroni(points, center=[], enlarge=0):
     plt.show()
     return
 
+def plot_voronoi_color(points, color_by="area", log=False, cmap=""):
+    ps = np.array([p.xy for p in points])
+    vor = Voronoi(ps)
+    if color_by.upper() == "AREA":
+        c_scale = [p.area for p in points]
+    elif color_by.upper() == "RIDGE_STDEV":
+        c_scale = [p.ridge_stdev for p in points]
+    elif color_by.upper() == "ANGLE_STDEV":
+        c_scale = [p.angle_stdev for p in points]
+
+    if log == True:
+        c_scale = [math.log(c+1) for c in c_scale]
+
+    if not cmap:
+        cmap = cm.plasma
+
+
+    color_min = min([c for c in c_scale if abs(c) > 0.00001])
+    color_max = max([c for c in c_scale if abs(c) > 0.00001])
+
+    # normalize chosen colormap
+    # https://matplotlib.org/3.5.0/tutorials/colors/colormaps.html
+    norm = mpl.colors.Normalize(vmin=color_min, vmax=color_max, clip=True)
+    mapper = cm.ScalarMappable(norm=norm, cmap=cmap)
+
+    voronoi_plot_2d(vor, show_points=True, show_vertices=False, s=1)
+    for r in range(len(vor.point_region)):
+        region = vor.regions[vor.point_region[r]]
+        if not -1 in region:
+            polygon = [vor.vertices[i] for i in region]
+            plt.fill(*zip(*polygon), color=mapper.to_rgba(c_scale[r]))
+    plt.show()
 
 if __name__ == '__main__':
 #    inputfile = "points_9.txt"
@@ -162,66 +196,72 @@ if __name__ == '__main__':
 
     points, vertices, ridges = read_points(inputfile)
 
-    print("Verifying the data structure")
-    print("Points")
-    for p in points:
-        print("   Point Corrdinates:", p.xy)
-        if p.enclosed:
-            print("      Enclosed: True")
-        else:
-            print("      Enclosed: False")
-        print("   Vertices of point: ")
-        if p.vertices:
-            print("      ", [pv.xy for pv in p.vertices])
-        else:
-            print("      Open region doesn't have closing vertices.")
-        print("   Ridges of point: ")
-        for r in p.ridges:
-            if not r.open:
-                print("      ", [v.xy for v in r.vertices])
-            else:
-                print("      Open ridge")
-        print("   Neighbors:")
-        for n in p.neighbor_points:
-            print("      ", n.xy)
-        print("   Area:%.3f" % p.area)
-        print()
+    # print("Verifying the data structure")
+    # print("Points")
+    # for p in points:
+    #     print("   Point Corrdinates:", p.xy)
+    #     if p.enclosed:
+    #         print("      Enclosed: True")
+    #     else:
+    #         print("      Enclosed: False")
+    #     print("   Vertices of point: ")
+    #     if p.vertices:
+    #         print("      ", [pv.xy for pv in p.vertices])
+    #     else:
+    #         print("      Open region doesn't have closing vertices.")
+    #     print("   Ridges of point: ")
+    #     for r in p.ridges:
+    #         if not r.open:
+    #             print("      ", [v.xy for v in r.vertices])
+    #         else:
+    #             print("      Open ridge")
+    #     print("   Neighbors:")
+    #     for n in p.neighbor_points:
+    #         print("      ", n.xy)
+    #     print("   Area:%.3f" % p.area)
+    #     print()
+    #
+    # print()
+    # print("Vertices")
+    # for v in vertices:
+    #     print("   Enclosed region Vertex Corrdinates:", v.xy)
+    #     print("   Points of this vertex:")
+    #     for p in v.points:
+    #         print("      ", p.xy)
+    #     print("   Ridges coordinates of this vertex:")
+    #     for r in v.ridges:
+    #         if not r.open:
+    #             print("      ", [vofr.xy for vofr in r.vertices])
+    #     print()
+    #
+    # print()
+    # print("Ridges")
+    # for r in ridges:
+    #     if not r.open:
+    #         print("   Ridge", r.vertices[0].xy, " - ", r.vertices[1].xy)
+    #         print("   Length:", r.length)
+    #         print("   Points it belongs:")
+    #         for p in r.points:
+    #             print("      ", p.xy)
+    #         print()
+    #
+    #
+    # # How chaotic is neighbor number distribution?
+    # neighbor_counts_all = [len(p.neighbor_points) for p in points]
+    # neighbor_counts_closed = [len(p.neighbor_points) for p in points if p.enclosed]
+    # print("Neighbor(all) numbers:", neighbor_counts_all)
+    # print("Neighbor(all) number distribution entropy: %.3f" % entropy(neighbor_counts_all))
+    # print()
+    # print("Neighbor(enclosed region) numbers:", neighbor_counts_closed)
+    # print("Neighbor(enclosed region) number distribution entropy: %.3f" % entropy(neighbor_counts_closed))
+    #
+    # print("%5s %8s %8s %8s" % ("#", "Area", "d_Ridge", "d_Angle"))
+    # for i in range(len(points)):
+    #     p = points[i]
+    #     if p.enclosed:
+    #         print("%5d %8.3f %8.3f %8.3f" % (i, p.area, p.ridge_stdev, p.angle_stdev))
+    #     else:
+    #         print("%5d Open region" % (i))
 
-    print()
-    print("Vertices")
-    for v in vertices:
-        print("   Enclosed region Vertex Corrdinates:", v.xy)
-        print("   Points of this vertex:")
-        for p in v.points:
-            print("      ", p.xy)
-        print("   Ridges coordinates of this vertex:")
-        for r in v.ridges:
-            if not r.open:
-                print("      ", [vofr.xy for vofr in r.vertices])
-        print()
 
-    print()
-    print("Ridges")
-    for r in ridges:
-        if not r.open:
-            print("   Ridge", r.vertices[0].xy, " - ", r.vertices[1].xy)
-            print("   Length:", r.length)
-            print("   Points it belongs:")
-            for p in r.points:
-                print("      ", p.xy)
-            print()
-
-
-    # How chaotic is neighbor number distribution?
-    neighbor_counts_all = [len(p.neighbor_points) for p in points]
-    neighbor_counts_closed = [len(p.neighbor_points) for p in points if p.enclosed]
-    print("Neighbor(all) numbers:", neighbor_counts_all)
-    print("Neighbor(all) number distribution entropy: %.3f" % entropy(neighbor_counts_all))
-    print()
-    print("Neighbor(enclosed region) numbers:", neighbor_counts_closed)
-    print("Neighbor(enclosed region) number distribution entropy: %.3f" % entropy(neighbor_counts_closed))
-
-    for p in points:
-        if p.enclosed:
-            print("%8.3f %8.3f %8.3f" % (p.area, p.ridge_stdev, p.angle_stdev))
-    plot_voroni(points)
+    plot_voronoi_color(points, color_by="angle_stdev", log=True, cmap="viridis")
