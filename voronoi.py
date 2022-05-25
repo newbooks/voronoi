@@ -35,19 +35,43 @@ class Ridge:
 def dvv(v1, v2):
     return np.linalg.norm(np.array(v1) - np.array(v2))
 
-def read_points(fname):
-    points = []
-    vertices = []
-    ridges = []
+
+def read_coordinates(fname):
     # read point coordinates
+    coordinates = []
     with open(fname) as fp:
         while True:
             line = fp.readline()
             if not line:
                 break
             else:
-                p = Point([float(x) for x in line.strip().split()])
-                points.append(p)
+                p = [float(x) for x in line.strip().split()]
+                coordinates.append(p)
+    return coordinates
+
+def read_coordinates_par(fname):
+    # read point coordinates
+    coordinates = []
+    with open(fname) as fp:
+        while True:
+            line = fp.readline()
+            if not line:
+                break
+            else:
+                fields = line.split("#")[0].strip().split()
+                if len(fields) >= 5:
+                    p = [float(fields[2]), float(fields[4])]
+                    coordinates.append(p)
+    return coordinates
+
+def load_points(coordinates):
+    points = []
+    vertices = []
+    ridges = []
+
+    for xy in coordinates:
+        p = Point(xy)
+        points.append(p)
 
     # get vertices, edges, and regions
     v_points = [p.xy for p in points]
@@ -112,8 +136,8 @@ def read_points(fname):
                 angles.append(avv(v1, v2))
             p.angle_stdev = np.std(angles)
 
-
     return points, vertices, ridges
+
 
 def get_area_3v(triangle_v):
     v0 = triangle_v[0]
@@ -157,7 +181,7 @@ def plot_voronoi(points, center=[], enlarge=0):
     plt.show()
     return
 
-def plot_voronoi_color(points, color_by="area", log=False, cmap=""):
+def plot_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0, color_cut=1.0, boundary=True):
     ps = np.array([p.xy for p in points])
     vor = Voronoi(ps)
     if color_by.upper() == "AREA":
@@ -173,28 +197,48 @@ def plot_voronoi_color(points, color_by="area", log=False, cmap=""):
     if not cmap:
         cmap = cm.plasma
 
+    if boundary:
+        line_width = 0.1
+    else:
+        line_width = 0.0
+
 
     color_min = min([c for c in c_scale if abs(c) > 0.00001])
-    color_max = max([c for c in c_scale if abs(c) > 0.00001])
+    color_max = (max([c for c in c_scale if abs(c) > 0.00001]) - color_min) * color_cut + color_min
 
     # normalize chosen colormap
     # https://matplotlib.org/3.5.0/tutorials/colors/colormaps.html
     norm = mpl.colors.Normalize(vmin=color_min, vmax=color_max, clip=True)
     mapper = cm.ScalarMappable(norm=norm, cmap=cmap)
 
-    voronoi_plot_2d(vor, show_points=True, show_vertices=False, s=1)
+    voronoi_plot_2d(vor, show_points=False, show_vertices=False, s=1, line_width=line_width)
+
+    xmin = min(ps[:, 0])
+    xmax = max(ps[:, 0])
+    ymin = min(ps[:, 1])
+    ymax = max(ps[:, 1])
+
+    plt.xlim(xmin - enlarge, xmax + enlarge)
+    plt.ylim(ymin - enlarge, ymax + enlarge)
+
+    print(c_scale)
+
     for r in range(len(vor.point_region)):
         region = vor.regions[vor.point_region[r]]
         if not -1 in region:
             polygon = [vor.vertices[i] for i in region]
             plt.fill(*zip(*polygon), color=mapper.to_rgba(c_scale[r]))
+
+
     plt.show()
 
 if __name__ == '__main__':
 #    inputfile = "points_9.txt"
-    inputfile = "random100.txt"
-
-    points, vertices, ridges = read_points(inputfile)
+#    inputfile = "random100.txt"
+#    inputfile = "random100.txt"
+    inputfile = "par_D2N500VF0.78Bidi1.4_0.5Square_18_nobrownian_2D_stress1.5r.dat"
+    coordinates = read_coordinates_par(inputfile)
+    points, vertices, ridges = load_points(coordinates)
 
     # print("Verifying the data structure")
     # print("Points")
@@ -264,4 +308,4 @@ if __name__ == '__main__':
     #         print("%5d Open region" % (i))
 
 
-    plot_voronoi_color(points, color_by="angle_stdev", log=True, cmap="viridis")
+    plot_voronoi_color(points, color_by="angle_stdev", log=False, cmap="viridis", color_cut=1.0, enlarge=0.5)
