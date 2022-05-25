@@ -264,4 +264,5 @@ if __name__ == '__main__':
     #         print("%5d Open region" % (i))
 
 
+    # A list of cmap colors is available https://matplotlib.org/3.5.0/tutorials/colors/colormaps.html
     plot_voronoi_color(points, color_by="angle_stdev", log=True, cmap="viridis")
