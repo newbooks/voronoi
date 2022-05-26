@@ -48,6 +48,7 @@ def read_coordinates(fname):
                 coordinates.append(p)
     return coordinates
 
+
 def read_coordinates_par(fname):
     # read point coordinates
     coordinates = []
@@ -135,8 +136,8 @@ def load_points(coordinates):
                 angles.append(avv(v1, v2))
             p.angle_stdev = np.std(angles)
 
-
     return points, vertices, ridges
+
 
 def get_area_3v(triangle_v):
     v0 = triangle_v[0]
@@ -180,7 +181,7 @@ def plot_voronoi(points, center=[], enlarge=0):
     plt.show()
     return
 
-def plot_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0, scale=1.0, boundary=True):
+def plot_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0, color_cut=1.0, boundary=True):
     ps = np.array([p.xy for p in points])
     vor = Voronoi(ps)
     if color_by.upper() == "AREA":
@@ -203,38 +204,39 @@ def plot_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0,
 
 
     color_min = min([c for c in c_scale if abs(c) > 0.00001])
-    color_max = max([c for c in c_scale if abs(c) > 0.00001]) * scale
+    color_max = (max([c for c in c_scale if abs(c) > 0.00001]) - color_min) * color_cut + color_min
 
     # normalize chosen colormap
     # https://matplotlib.org/3.5.0/tutorials/colors/colormaps.html
     norm = mpl.colors.Normalize(vmin=color_min, vmax=color_max, clip=True)
     mapper = cm.ScalarMappable(norm=norm, cmap=cmap)
 
-    voronoi_plot_2d(vor, show_points=True, show_vertices=False, line_width=line_width)
+    voronoi_plot_2d(vor, show_points=False, show_vertices=False, s=1, line_width=line_width)
 
     xmin = min(ps[:, 0])
     xmax = max(ps[:, 0])
     ymin = min(ps[:, 1])
     ymax = max(ps[:, 1])
 
-    plt.xlim(xmin-enlarge, xmax+enlarge)
-    plt.ylim(ymin-enlarge, ymax+enlarge)
+    plt.xlim(xmin - enlarge, xmax + enlarge)
+    plt.ylim(ymin - enlarge, ymax + enlarge)
 
     for r in range(len(vor.point_region)):
         region = vor.regions[vor.point_region[r]]
         if not -1 in region:
             polygon = [vor.vertices[i] for i in region]
             plt.fill(*zip(*polygon), color=mapper.to_rgba(c_scale[r]))
+
+
     plt.show()
 
 if __name__ == '__main__':
 #    inputfile = "points_9.txt"
 #    inputfile = "random100.txt"
+#    inputfile = "random100.txt"
     inputfile = "par_D2N500VF0.78Bidi1.4_0.5Square_18_nobrownian_2D_stress1.5r.dat"
     coordinates = read_coordinates_par(inputfile)
     points, vertices, ridges = load_points(coordinates)
-
-#    points, vertices, ridges = read_points_par(inputfile)
 
 # print("Verifying the data structure")
     # print("Points")
@@ -305,5 +307,5 @@ if __name__ == '__main__':
 
 
     # A list of cmap colors is available http
-# s://matplotlib.org/3.5.0/tutorials/colors/colormaps.html
-    plot_voronoi_color(points, color_by="angle_stdev", log=True, cmap="viridis", enlarge=0.5, scale=0.5, boundary=False)
+    # https://matplotlib.org/3.5.0/tutorials/colors/colormaps.html
+    plot_voronoi_color(points, color_by="area", log=True, cmap="Blues_r", color_cut=0.01, enlarge=0.5)
