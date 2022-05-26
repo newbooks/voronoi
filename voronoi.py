@@ -35,19 +35,42 @@ class Ridge:
 def dvv(v1, v2):
     return np.linalg.norm(np.array(v1) - np.array(v2))
 
-def read_points(fname):
-    points = []
-    vertices = []
-    ridges = []
+def read_coordinates(fname):
     # read point coordinates
+    coordinates = []
     with open(fname) as fp:
         while True:
             line = fp.readline()
             if not line:
                 break
             else:
-                p = Point([float(x) for x in line.strip().split()])
-                points.append(p)
+                p = [float(x) for x in line.strip().split()]
+                coordinates.append(p)
+    return coordinates
+
+def read_coordinates_par(fname):
+    # read point coordinates
+    coordinates = []
+    with open(fname) as fp:
+        while True:
+            line = fp.readline()
+            if not line:
+                break
+            else:
+                fields = line.split("#")[0].strip().split()
+                if len(fields) >= 5:
+                    p = [float(fields[2]), float(fields[4])]
+                    coordinates.append(p)
+    return coordinates
+
+def load_points(coordinates):
+    points = []
+    vertices = []
+    ridges = []
+
+    for xy in coordinates:
+        p = Point(xy)
+        points.append(p)
 
     # get vertices, edges, and regions
     v_points = [p.xy for p in points]
@@ -112,8 +135,8 @@ def read_points(fname):
                 angles.append(avv(v1, v2))
             p.angle_stdev = np.std(angles)
 
-
     return points, vertices, ridges
+
 
 def get_area_3v(triangle_v):
     v0 = triangle_v[0]
@@ -175,7 +198,7 @@ def plot_voronoi_color(points, color_by="area", log=False, cmap=""):
 
 
     color_min = min([c for c in c_scale if abs(c) > 0.00001])
-    color_max = max([c for c in c_scale if abs(c) > 0.00001])
+    color_max = max([c for c in c_scale if abs(c) > 0.00001]) * 4
 
     # normalize chosen colormap
     # https://matplotlib.org/3.5.0/tutorials/colors/colormaps.html
@@ -192,9 +215,12 @@ def plot_voronoi_color(points, color_by="area", log=False, cmap=""):
 
 if __name__ == '__main__':
 #    inputfile = "points_9.txt"
-    inputfile = "random100.txt"
+#    inputfile = "random100.txt"
+    inputfile = "par_D2N500VF0.78Bidi1.4_0.5Square_18_nobrownian_2D_stress1.5r.dat"
+    coordinates = read_coordinates_par(inputfile)
+    points, vertices, ridges = load_points(coordinates)
 
-    points, vertices, ridges = read_points(inputfile)
+#    points, vertices, ridges = read_points(inputfile)
 
     # print("Verifying the data structure")
     # print("Points")
