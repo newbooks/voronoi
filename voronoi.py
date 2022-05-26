@@ -198,7 +198,7 @@ def plot_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0,
         cmap = cm.plasma
 
     if boundary:
-        line_width = 0.1
+        line_width = 1.0
     else:
         line_width = 0.0
 
@@ -211,7 +211,7 @@ def plot_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0,
     norm = mpl.colors.Normalize(vmin=color_min, vmax=color_max, clip=True)
     mapper = cm.ScalarMappable(norm=norm, cmap=cmap)
 
-    voronoi_plot_2d(vor, show_points=False, show_vertices=False, s=1, line_width=line_width)
+    voronoi_plot_2d(vor, show_points=True, show_vertices=False, s=1, line_width=line_width)
 
     xmin = min(ps[:, 0])
     xmax = max(ps[:, 0])
@@ -220,8 +220,6 @@ def plot_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0,
 
     plt.xlim(xmin - enlarge, xmax + enlarge)
     plt.ylim(ymin - enlarge, ymax + enlarge)
-
-    print(c_scale)
 
     for r in range(len(vor.point_region)):
         region = vor.regions[vor.point_region[r]]
@@ -308,4 +306,4 @@ if __name__ == '__main__':
     #         print("%5d Open region" % (i))
 
 
-    plot_voronoi_color(points, color_by="angle_stdev", log=False, cmap="viridis", color_cut=1.0, enlarge=0.5)
+    plot_voronoi_color(points, color_by="angle_stdev", log=False, cmap="Blues_r", color_cut=1.0, enlarge=0.5)
