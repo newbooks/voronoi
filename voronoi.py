@@ -51,18 +51,21 @@ def read_coordinates(fname):
 
 def read_coordinates_par(fname):
     # read point coordinates
+    snapshots = []
     coordinates = []
-    with open(fname) as fp:
-        while True:
-            line = fp.readline()
-            if not line:
-                break
-            else:
-                fields = line.split("#")[0].strip().split()
-                if len(fields) >= 5:
-                    p = [float(fields[2]), float(fields[4])]
-                    coordinates.append(p)
-    return coordinates
+    lines = open(fname).readlines()
+    lines = lines[22:]
+    for line in lines:
+        if line[0] == "#":
+            if coordinates:
+                snapshots.append(coordinates)
+            coordinates = []
+        else:
+            fields = line.strip().split()
+            if len(fields) > 10:
+                p = [float(fields[2]), float(fields[4])]
+                coordinates.append(p)
+    return snapshots
 
 def load_points(coordinates):
     points = []
@@ -235,7 +238,9 @@ if __name__ == '__main__':
 #    inputfile = "random100.txt"
 #    inputfile = "random100.txt"
     inputfile = "par_D2N500VF0.78Bidi1.4_0.5Square_18_nobrownian_2D_stress1.5r.dat"
-    coordinates = read_coordinates_par(inputfile)
+    snapshots = read_coordinates_par(inputfile)
+    print(len(snapshots))
+    coordinates = snapshots[150]
     points, vertices, ridges = load_points(coordinates)
 
 # print("Verifying the data structure")
@@ -308,4 +313,4 @@ if __name__ == '__main__':
 
     # A list of cmap colors is available http
     # https://matplotlib.org/3.5.0/tutorials/colors/colormaps.html
-    plot_voronoi_color(points, color_by="area", log=True, cmap="Blues_r", color_cut=0.01, enlarge=0.5)
+    plot_voronoi_color(points, color_by="ridge_stdev", log=True, cmap="Blues_r", color_cut=0.1, enlarge=0.5)
