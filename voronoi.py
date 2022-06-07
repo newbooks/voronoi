@@ -7,6 +7,7 @@ import matplotlib.cm as cm
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy.stats import entropy
 import math
+import os
 
 class Point:
     def __init__(self, xy):
@@ -184,7 +185,63 @@ def plot_voronoi(points, center=[], enlarge=0):
     plt.show()
     return
 
+
 def plot_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0, color_cut=1.0, boundary=True):
+    ps = np.array([p.xy for p in points])
+    vor = Voronoi(ps)
+    if color_by.upper() == "AREA":
+        c_scale = [p.area for p in points]
+    elif color_by.upper() == "RIDGE_STDEV":
+        c_scale = [p.ridge_stdev for p in points]
+    elif color_by.upper() == "ANGLE_STDEV":
+        c_scale = [p.angle_stdev for p in points]
+
+    if log == True:
+        c_scale = [math.log(c+1) for c in c_scale]
+
+    if not cmap:
+        cmap = cm.plasma
+
+    if boundary:
+        line_width = 1.0
+    else:
+        line_width = 0.0
+
+    valid_c = [c for c in c_scale if abs(c) > 0.00001]
+    if valid_c:
+        color_min = min(valid_c)
+        color_max = max(valid_c)
+    else:
+        color_min = 0.0
+        color_max = 0.0    
+
+    # normalize chosen colormap
+    # https://matplotlib.org/3.5.0/tutorials/colors/colormaps.html
+    norm = mpl.colors.Normalize(vmin=color_min, vmax=color_max, clip=True)
+    mapper = cm.ScalarMappable(norm=norm, cmap=cmap)
+
+    voronoi_plot_2d(vor, show_points=False, show_vertices=False, s=1, line_width=line_width)
+
+    xmin = min(ps[:, 0])
+    xmax = max(ps[:, 0])
+    ymin = min(ps[:, 1])
+    ymax = max(ps[:, 1])
+
+
+    plt.xlim(xmin - enlarge, xmax + enlarge)
+    plt.ylim(ymin - enlarge, ymax + enlarge)
+
+    for r in range(len(vor.point_region)):
+        region = vor.regions[vor.point_region[r]]
+        if not -1 in region:
+            polygon = [vor.vertices[i] for i in region]
+            plt.fill(*zip(*polygon), color=mapper.to_rgba(c_scale[r]))
+
+    plt.show()
+    
+
+def save_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0, color_cut=1.0, boundary=True):
+    plot_voronoi_color.counter += 1
     ps = np.array([p.xy for p in points])
     vor = Voronoi(ps)
     if color_by.upper() == "AREA":
@@ -221,6 +278,12 @@ def plot_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0,
     ymin = min(ps[:, 1])
     ymax = max(ps[:, 1])
 
+    xmin = -25
+    xmax = 25
+    ymin = -25
+    ymax = 25
+
+
     plt.xlim(xmin - enlarge, xmax + enlarge)
     plt.ylim(ymin - enlarge, ymax + enlarge)
 
@@ -230,18 +293,22 @@ def plot_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0,
             polygon = [vor.vertices[i] for i in region]
             plt.fill(*zip(*polygon), color=mapper.to_rgba(c_scale[r]))
 
+    filename = "%04d.png" % plot_voronoi_color.counter
+    dirname = "images_angle"
+    if not os.path.isdir(dirname):
+        os.mkdir(dirname)
+    fpath = "/".join([dirname,filename])
+    print("Writing %s" % fpath)
+    plt.savefig(fpath)
+    #plt.show()
 
-    plt.show()
 
 if __name__ == '__main__':
 #    inputfile = "points_9.txt"
 #    inputfile = "random100.txt"
-#    inputfile = "random100.txt"
+
     inputfile = "par_D2N500VF0.78Bidi1.4_0.5Square_18_nobrownian_2D_stress1.5r.dat"
     snapshots = read_coordinates_par(inputfile)
-    print(len(snapshots))
-    coordinates = snapshots[150]
-    points, vertices, ridges = load_points(coordinates)
 
 # print("Verifying the data structure")
     # print("Points")
@@ -294,13 +361,9 @@ if __name__ == '__main__':
     #
     #
     # # How chaotic is neighbor number distribution?
-    neighbor_counts_all = [len(p.neighbor_points) for p in points]
-    neighbor_counts_closed = [len(p.neighbor_points) for p in points if p.enclosed]
     # print("Neighbor(all) numbers:", neighbor_counts_all)
-    print("Neighbor(all) number distribution entropy: %.3f" % entropy(neighbor_counts_all))
     # print()
     # print("Neighbor(enclosed region) numbers:", neighbor_counts_closed)
-    print("Neighbor(enclosed region) number distribution entropy: %.3f" % entropy(neighbor_counts_closed))
     #
     # print("%5s %8s %8s %8s" % ("#", "Area", "d_Ridge", "d_Angle"))
     # for i in range(len(points)):
@@ -310,7 +373,20 @@ if __name__ == '__main__':
     #     else:
     #         print("%5d Open region" % (i))
 
-
     # A list of cmap colors is available http
     # https://matplotlib.org/3.5.0/tutorials/colors/colormaps.html
-    plot_voronoi_color(points, color_by="ridge_stdev", log=True, cmap="Blues_r", color_cut=0.1, enlarge=0.5)
+
+    #neighbor_counts_all = [len(p.neighbor_points) for p in points]
+    #neighbor_counts_closed = [len(p.neighbor_points) for p in points if p.enclosed]
+    #print("Neighbor(all) number distribution entropy: %.3f" % entropy(neighbor_counts_all))
+    #print("Neighbor(enclosed region) number distribution entropy: %.3f" % entropy(neighbor_counts_closed))
+    #plot_voronoi_color(points, color_by="area", log=True, cmap="Blues_r", color_cut=0.1, enlarge=0.5)
+    plot_voronoi_color.counter = 0
+    for coordinates in snapshots:
+        points, vertices, ridges = load_points(coordinates)
+
+        # neighbor_counts_all = [len(p.neighbor_points) for p in points]
+        # neighbor_counts_closed = [len(p.neighbor_points) for p in points if p.enclosed]
+        # print("Neighbor(all) number distribution entropy: %.3f" % entropy(neighbor_counts_all))
+        # print("Neighbor(enclosed region) number distribution entropy: %.3f" % entropy(neighbor_counts_closed))
+        save_voronoi_color(points, color_by="angle_stdev", log=True, cmap="Blues_r", color_cut=1, enlarge=0.5)
