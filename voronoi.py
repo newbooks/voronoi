@@ -302,13 +302,47 @@ def save_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0,
     plt.savefig(fpath)
     #plt.show()
 
+def unitcell_expand(coordinates, pad=0.0, shear=0.0):
+    expanded_points = []
+
+    # Pad the box
+    base_points = np.array(coordinates)
+    xmin = min(base_points[:, 0])
+    xmax = max(base_points[:, 0])
+    ymin = min(base_points[:, 1])
+    ymax = max(base_points[:, 1])
+    unit_area = (ymax-ymin)*(xmax-xmin) / len(base_points)
+    d_padding = np.sqrt(unit_area)
+    delta_x = xmax - xmin +d_padding
+    delta_y = ymax - ymin +d_padding
+
+    shift = np.array((-delta_x, -delta_y))
+    extended_points = base_points + shift
+    shift = np.array((-delta_x, 0))
+    extended_points = np.append(extended_points, base_points + shift, axis=0)
+    shift = np.array((-delta_x, delta_y))
+    extended_points = np.append(extended_points, base_points + shift, axis=0)
+    shift = np.array((0, -delta_y))
+    extended_points = np.append(extended_points, base_points + shift, axis=0)
+    shift = np.array((0, delta_y))
+    extended_points = np.append(extended_points, base_points + shift, axis=0)
+    shift = np.array((delta_x, -delta_y))
+    extended_points = np.append(extended_points, base_points + shift, axis=0)
+    shift = np.array((delta_x, 0))
+    extended_points = np.append(extended_points, base_points + shift, axis=0)
+    shift = np.array((delta_x, delta_y))
+    extended_points = np.append(extended_points, base_points + shift, axis=0)
+
+    return expanded_points
 
 if __name__ == '__main__':
 #    inputfile = "points_9.txt"
-#    inputfile = "random100.txt"
+    inputfile = "random100.txt"
 
-    inputfile = "par_D2N500VF0.78Bidi1.4_0.5Square_18_nobrownian_2D_stress1.5r.dat"
-    snapshots = read_coordinates_par(inputfile)
+    coordinates = read_coordinates(inputfile)
+    expanded_coordinates = unitcell_expand(coordinates, pad=0.0, shear=0.0)
+#    inputfile = "par_D2N500VF0.78Bidi1.4_0.5Square_18_nobrownian_2D_stress1.5r.dat"
+#    snapshots = read_coordinates_par(inputfile)
 
 # print("Verifying the data structure")
     # print("Points")
@@ -381,12 +415,13 @@ if __name__ == '__main__':
     #print("Neighbor(all) number distribution entropy: %.3f" % entropy(neighbor_counts_all))
     #print("Neighbor(enclosed region) number distribution entropy: %.3f" % entropy(neighbor_counts_closed))
     #plot_voronoi_color(points, color_by="area", log=True, cmap="Blues_r", color_cut=0.1, enlarge=0.5)
-    plot_voronoi_color.counter = 0
-    for coordinates in snapshots:
-        points, vertices, ridges = load_points(coordinates)
 
-        # neighbor_counts_all = [len(p.neighbor_points) for p in points]
-        # neighbor_counts_closed = [len(p.neighbor_points) for p in points if p.enclosed]
-        # print("Neighbor(all) number distribution entropy: %.3f" % entropy(neighbor_counts_all))
-        # print("Neighbor(enclosed region) number distribution entropy: %.3f" % entropy(neighbor_counts_closed))
-        save_voronoi_color(points, color_by="angle_stdev", log=True, cmap="Blues_r", color_cut=1, enlarge=0.5)
+    # plot_voronoi_color.counter = 0
+    # for coordinates in snapshots:
+    #     points, vertices, ridges = load_points(coordinates)
+    #
+    #     # neighbor_counts_all = [len(p.neighbor_points) for p in points]
+    #     # neighbor_counts_closed = [len(p.neighbor_points) for p in points if p.enclosed]
+    #     # print("Neighbor(all) number distribution entropy: %.3f" % entropy(neighbor_counts_all))
+    #     # print("Neighbor(enclosed region) number distribution entropy: %.3f" % entropy(neighbor_counts_closed))
+    #     save_voronoi_color(points, color_by="angle_stdev", log=True, cmap="Blues_r", color_cut=1, enlarge=0.5)
