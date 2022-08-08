@@ -313,8 +313,11 @@ def unitcell_expand(coordinates, pad=0.0, shear=0.0):
     ymax = max(base_points[:, 1])
     unit_area = (ymax-ymin)*(xmax-xmin) / len(base_points)
     d_padding = np.sqrt(unit_area)
-    delta_x = xmax - xmin +d_padding
-    delta_y = ymax - ymin +d_padding
+    if abs(pad) > 0.000001:
+        d_padding = pad
+
+    delta_x = xmax - xmin + d_padding
+    delta_y = ymax - ymin + d_padding
 
     shift = np.array((-delta_x, -delta_y))
     extended_points = base_points + shift
