@@ -316,29 +316,35 @@ def unitcell_expand(coordinates, pad=0.0, shear=0.0):
     if abs(pad) > 0.000001: # none 0 input padding, otherwise use average distance as padding
         d_padding = pad
 
+    # This is how much the expanding strips should move left and right, up and down.
     delta_x = xmax - xmin + d_padding
     delta_y = ymax - ymin + d_padding
 
+    # Expanding the unit cell
+    bottom_points = []
     shift = np.array((-delta_x, -delta_y))
-    extended_points = base_points + shift
-    #print(base_points)
-    #print(shift)
-    print(extended_points)
-    # shift = np.array((-delta_x, 0))
-    # extended_points = np.append(extended_points, base_points + shift, axis=0)
-    # shift = np.array((-delta_x, delta_y))
-    # extended_points = np.append(extended_points, base_points + shift, axis=0)
-    # shift = np.array((0, -delta_y))
-    # extended_points = np.append(extended_points, base_points + shift, axis=0)
-    # shift = np.array((0, delta_y))
-    # extended_points = np.append(extended_points, base_points + shift, axis=0)
-    # shift = np.array((delta_x, -delta_y))
-    # extended_points = np.append(extended_points, base_points + shift, axis=0)
-    # shift = np.array((delta_x, 0))
-    # extended_points = np.append(extended_points, base_points + shift, axis=0)
-    # shift = np.array((delta_x, delta_y))
-    # extended_points = np.append(extended_points, base_points + shift, axis=0)
-    #
+    buttom_points = base_points + shift
+    shift = np.array((0, -delta_y))
+    buttom_points = np.append(buttom_points, base_points + shift, axis=0)
+    shift = np.array((delta_x, -delta_y))
+    buttom_points = np.append(buttom_points, base_points + shift, axis=0)
+
+    side_points = []
+    shift = np.array((-delta_x, 0))
+    side_points = np.append(side_points, base_points + shift, axis=0)
+    shift = np.array((delta_x, 0))
+    side_points = np.append(side_points, base_points + shift, axis=0)
+
+    top_points = []
+    shift = np.array((-delta_x, delta_y))
+    top_points = np.append(top_points, base_points + shift, axis=0)
+    shift = np.array((0, delta_y))
+    top_points = np.append(top_points, base_points + shift, axis=0)
+    shift = np.array((delta_x, delta_y))
+    top_points = np.append(top_points, base_points + shift, axis=0)
+
+
+
     return expanded_points
 
 if __name__ == '__main__':
