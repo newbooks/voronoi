@@ -302,7 +302,13 @@ def save_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0,
     plt.savefig(fpath)
     #plt.show()
 
-def unitcell_expand(coordinates, pad=0.0, shear=0.0):
+
+def shear_points(boxsize, points, shear):
+    sheared = []
+    # determine box size
+
+
+def unitcell_expand(coordinates, shear=0.0):
     expanded_points = []
 
     # Pad the box
@@ -320,28 +326,32 @@ def unitcell_expand(coordinates, pad=0.0, shear=0.0):
     delta_x = xmax - xmin + d_padding
     delta_y = ymax - ymin + d_padding
 
+    # Move points to make a parallelogram so that points are not
+    sheared_points = shear_points(base_points, shear)
+
+
     # Expanding the unit cell
-    bottom_points = []
-    shift = np.array((-delta_x, -delta_y))
-    buttom_points = base_points + shift
-    shift = np.array((0, -delta_y))
-    buttom_points = np.append(buttom_points, base_points + shift, axis=0)
-    shift = np.array((delta_x, -delta_y))
-    buttom_points = np.append(buttom_points, base_points + shift, axis=0)
-
-    side_points = []
-    shift = np.array((-delta_x, 0))
-    side_points = np.append(side_points, base_points + shift, axis=0)
-    shift = np.array((delta_x, 0))
-    side_points = np.append(side_points, base_points + shift, axis=0)
-
-    top_points = []
-    shift = np.array((-delta_x, delta_y))
-    top_points = np.append(top_points, base_points + shift, axis=0)
-    shift = np.array((0, delta_y))
-    top_points = np.append(top_points, base_points + shift, axis=0)
-    shift = np.array((delta_x, delta_y))
-    top_points = np.append(top_points, base_points + shift, axis=0)
+    # bottom_points = []
+    # shift = np.array((-delta_x, -delta_y))
+    # buttom_points = base_points + shift
+    # shift = np.array((0, -delta_y))
+    # buttom_points = np.append(buttom_points, base_points + shift, axis=0)
+    # shift = np.array((delta_x, -delta_y))
+    # buttom_points = np.append(buttom_points, base_points + shift, axis=0)
+    #
+    # side_points = []
+    # shift = np.array((-delta_x, 0))
+    # side_points = np.append(side_points, base_points + shift, axis=0)
+    # shift = np.array((delta_x, 0))
+    # side_points = np.append(side_points, base_points + shift, axis=0)
+    #
+    # top_points = []
+    # shift = np.array((-delta_x, delta_y))
+    # top_points = np.append(top_points, base_points + shift, axis=0)
+    # shift = np.array((0, delta_y))
+    # top_points = np.append(top_points, base_points + shift, axis=0)
+    # shift = np.array((delta_x, delta_y))
+    # top_points = np.append(top_points, base_points + shift, axis=0)
 
 
 
@@ -352,7 +362,7 @@ if __name__ == '__main__':
     inputfile = "random100.txt"
 
     coordinates = read_coordinates(inputfile)
-    expanded_coordinates = unitcell_expand(coordinates, pad=0.0, shear=0.0)
+    expanded_coordinates = unitcell_expand(boxsize, coordinates, shear=0.0)
 #    inputfile = "par_D2N500VF0.78Bidi1.4_0.5Square_18_nobrownian_2D_stress1.5r.dat"
 #    snapshots = read_coordinates_par(inputfile)
 
