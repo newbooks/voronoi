@@ -305,30 +305,28 @@ def save_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0,
 
 def shear_points(boxsize, points, shear):
     sheared = []
-    # determine box size
+    mid_y = (boxsize[0][1] + boxsize[1][1])/2
+    for p in points:
+        dy = p[1] - mid_y
+        dx = dy * shear
+        x_if_unshifted = p[0] - dx
+        if outside_box(box_size, actual_x):
 
 
-def unitcell_expand(coordinates, shear=0.0):
+
+
+def unitcell_expand(boxsize, coordinates, shear=0.0):
     expanded_points = []
 
-    # Pad the box
-    base_points = np.array(coordinates)
-    xmin = min(base_points[:, 0])
-    xmax = max(base_points[:, 0])
-    ymin = min(base_points[:, 1])
-    ymax = max(base_points[:, 1])
-    unit_area = (ymax-ymin)*(xmax-xmin) / len(base_points)
-    d_padding = np.sqrt(unit_area)
-    if abs(pad) > 0.000001: # none 0 input padding, otherwise use average distance as padding
-        d_padding = pad
-
-    # This is how much the expanding strips should move left and right, up and down.
-    delta_x = xmax - xmin + d_padding
-    delta_y = ymax - ymin + d_padding
-
     # Move points to make a parallelogram so that points are not
-    sheared_points = shear_points(base_points, shear)
+    sheared_points = shear_points(boxsize, coordinates, shear)
+    plt.scatter(coordinates, marker=".", color="blue")
+    plt.scatter(sheared_points, marker="o", color="red")
+    plt.show()
 
+#    padded_points = pad_points(sheared_points)
+#    stripped_points = strip_points(padded_points)
+#    unsheared_points = unshear_points(stripped_points)
 
     # Expanding the unit cell
     # bottom_points = []
@@ -362,7 +360,16 @@ if __name__ == '__main__':
     inputfile = "random100.txt"
 
     coordinates = read_coordinates(inputfile)
-    expanded_coordinates = unitcell_expand(boxsize, coordinates, shear=0.0)
+    # Find the box siaze
+    points = np.array(coordinates)
+    xmin = min(points[:, 0])
+    xmax = max(points[:, 0])
+    ymin = min(points[:, 1])
+    ymax = max(points[:, 1])
+    average_d = np.sqrt((xmax-xmin)*(ymax-ymin)/len(points))
+    boxsize = [(xmin - average_d, ymin - average_d), (xmax + average_d, ymax + average_d)]
+
+    expanded_coordinates = unitcell_expand(boxsize, coordinates, shear=0.1)
 #    inputfile = "par_D2N500VF0.78Bidi1.4_0.5Square_18_nobrownian_2D_stress1.5r.dat"
 #    snapshots = read_coordinates_par(inputfile)
 
