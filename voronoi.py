@@ -306,11 +306,21 @@ def save_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0,
 def shear_points(boxsize, points, shear):
     sheared = []
     mid_y = (boxsize[0][1] + boxsize[1][1])/2
+    box_width = boxsize[1][0] - boxsize[0][0]
     for p in points:
         dy = p[1] - mid_y
         dx = dy * shear
         x_if_unshifted = p[0] - dx
-        if outside_box(box_size, actual_x):
+        if x_if_unshifted < boxsize[0][0]:
+            n_boxes = np.floor((boxsize[0][0]-x_if_unshifted)/box_width)+1
+            actual_x = p[0] + n_boxes * (boxsize[1][0] - boxsize[0][0])
+        elif x_if_unshifted > boxsize[1][0]:
+            n_boxes = np.floor((x_if_unshifted - boxsize[1][0]) / box_width) + 1
+            actual_x = p[0] - n_boxes * (boxsize[1][0] - boxsize[0][0])
+        else:
+            actual_x = p[0]
+        sheared.append((actual_x, p[1]))
+    return sheared
 
 
 
@@ -320,8 +330,12 @@ def unitcell_expand(boxsize, coordinates, shear=0.0):
 
     # Move points to make a parallelogram so that points are not
     sheared_points = shear_points(boxsize, coordinates, shear)
-    plt.scatter(coordinates, marker=".", color="blue")
-    plt.scatter(sheared_points, marker="o", color="red")
+    x = np.array([p[0] for p in coordinates])
+    y = np.array([p[1] for p in coordinates])
+    plt.scatter(x, y, marker=".", color="blue")
+    x_s = np.array([p[0] for p in sheared_points])
+    y_s = np.array([p[1] for p in sheared_points])
+    plt.scatter(x_s, y_s, marker="o", color="red", alpha=0.5)
     plt.show()
 
 #    padded_points = pad_points(sheared_points)
@@ -366,10 +380,10 @@ if __name__ == '__main__':
     xmax = max(points[:, 0])
     ymin = min(points[:, 1])
     ymax = max(points[:, 1])
-    average_d = np.sqrt((xmax-xmin)*(ymax-ymin)/len(points))
+    average_d = np.sqrt((xmax-xmin)*(ymax-ymin)/len(points))/2
     boxsize = [(xmin - average_d, ymin - average_d), (xmax + average_d, ymax + average_d)]
 
-    expanded_coordinates = unitcell_expand(boxsize, coordinates, shear=0.1)
+    expanded_coordinates = unitcell_expand(boxsize, coordinates, shear=-12)
 #    inputfile = "par_D2N500VF0.78Bidi1.4_0.5Square_18_nobrownian_2D_stress1.5r.dat"
 #    snapshots = read_coordinates_par(inputfile)
 
