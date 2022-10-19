@@ -303,7 +303,7 @@ def save_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0,
     #plt.show()
 
 
-def shear_points(boxsize, points, shear):
+def unshear_points(boxsize, points, shear):
     sheared = []
     mid_y = (boxsize[0][1] + boxsize[1][1])/2
     box_width = boxsize[1][0] - boxsize[0][0]
@@ -329,12 +329,14 @@ def unitcell_expand(boxsize, coordinates, shear=0.0):
     expanded_points = []
 
     # Move points to make a parallelogram so that points are not
-    sheared_points = shear_points(boxsize, coordinates, shear)
+    unsheared_points = unshear_points(boxsize, coordinates, shear)
+
+
     x = np.array([p[0] for p in coordinates])
     y = np.array([p[1] for p in coordinates])
     plt.scatter(x, y, marker=".", color="blue")
-    x_s = np.array([p[0] for p in sheared_points])
-    y_s = np.array([p[1] for p in sheared_points])
+    x_s = np.array([p[0] for p in unsheared_points])
+    y_s = np.array([p[1] for p in unsheared_points])
     plt.scatter(x_s, y_s, marker="o", color="red", alpha=0.5)
     plt.show()
 
