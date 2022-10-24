@@ -303,21 +303,21 @@ def save_voronoi_color(points, color_by="area", log=False, cmap="", enlarge=0.0,
     #plt.show()
 
 
-def unshear_points(boxsize, points, shear):
-    unsheared = []
+def shear_points(boxsize, points, shear):
+    sheared = []
     mid_y = (boxsize[0][1] + boxsize[1][1])/2
     box_width = boxsize[1][0] - boxsize[0][0]
     for p in points:
         dy = p[1] - mid_y
         dx = dy * shear
-        x_if_unshifted = p[0] - dx
-        while x_if_unshifted < boxsize[0][0]: # out of boundary on the left side
-            x_if_unshifted += box_width
-        while x_if_unshifted > boxsize[1][0]:
-            x_if_unshifted -= box_width
-        unsheared.append((x_if_unshifted, p[1]))
+        x_if_shifted = p[0] + dx
+        while x_if_shifted < boxsize[0][0]: # out of boundary on the left side
+            x_if_shifted += box_width
+        while x_if_shifted > boxsize[1][0]:
+            x_if_shifted -= box_width
+        sheared.append((x_if_shifted, p[1]))
 
-    return unsheared
+    return sheared
 
 
 def stack_points(boxsize, coordinates):
@@ -335,6 +335,7 @@ def stack_points(boxsize, coordinates):
 
     shift = np.array((-delta_x, 0))
     stacked_points = np.append(stacked_points, base_points + shift, axis=0)
+    stacked_points = np.append(stacked_points, base_points, axis=0)
     shift = np.array((delta_x, 0))
     stacked_points = np.append(stacked_points, base_points + shift, axis=0)
 
@@ -348,11 +349,10 @@ def stack_points(boxsize, coordinates):
 
     return stacked_points
 
-def unitcell_expand(boxsize, coordinates, shear=0.0):
-    expanded_points = []
+def unitcell_expand(boxsize, coordinates, shear=0.0, expandby=1.1):
 
     # Move points to make a parallelogram so that points are not
-    unsheared_points = unshear_points(boxsize, coordinates, shear)
+    unsheared_points = shear_points(boxsize, coordinates, -shear)
 
     # x = np.array([p[0] for p in coordinates])
     # y = np.array([p[1] for p in coordinates])
@@ -363,33 +363,38 @@ def unitcell_expand(boxsize, coordinates, shear=0.0):
     # plt.xlim(boxsize[0][0], boxsize[1][0])
     # plt.show()
 
-    # filename = "%04d.png" % unitcell_expand.counter
-    # dirname = "unshear"
-    # if not os.path.isdir(dirname):
-    #     os.mkdir(dirname)
-    # fpath = "/".join([dirname,filename])
-    # print("Writing %s" % fpath)
-    # plt.savefig(fpath)
-    # plt.close()
-
-    # Expand points
+    #Expand points
     expanded_points = stack_points(boxsize, unsheared_points)
     box_width = boxsize[1][0] - boxsize[0][0]
     box_height = boxsize[1][1] - boxsize[0][1]
     expandedbox_size = ((boxsize[0][0]-box_width, boxsize[0][1]-box_height), (boxsize[1][0]+box_width, boxsize[1][1]+box_height))
 
-    x = np.array([p[0] for p in unsheared_points])
-    y = np.array([p[1] for p in unsheared_points])
-    plt.scatter(x, y, marker=".", color="blue")
-    x_s = np.array([p[0] for p in expanded_points])
-    y_s = np.array([p[1] for p in expanded_points])
-    plt.scatter(x_s, y_s, marker="o", color="red", alpha=0.5)
-    plt.xlim(expandedbox_size[0][0], expandedbox_size[1][0])
-    plt.ylim(expandedbox_size[0][1], expandedbox_size[1][1])
-    plt.show()
+    # x = np.array([p[0] for p in unsheared_points])
+    # y = np.array([p[1] for p in unsheared_points])
+    # plt.scatter(x, y, marker=".", color="blue")
+    # x_s = np.array([p[0] for p in expanded_points])
+    # y_s = np.array([p[1] for p in expanded_points])
+    # plt.scatter(x_s, y_s, marker="o", color="red", alpha=0.5)
+    # plt.xlim(expandedbox_size[0][0], expandedbox_size[1][0])
+    # plt.ylim(expandedbox_size[0][1], expandedbox_size[1][1])
+    # plt.show()
 
+    # Shear back
+    restored_points = shear_points(expandedbox_size, expanded_points, shear)
 
+    # x = np.array([p[0] for p in coordinates])
+    # y = np.array([p[1] for p in coordinates])
+    # plt.scatter(x, y, marker=".", color="blue")
+    # x_s = np.array([p[0] for p in restored_points])
+    # y_s = np.array([p[1] for p in restored_points])
+    # plt.scatter(x_s, y_s, marker="o", color="red", alpha=0.5)
+    # plt.xlim(expandedbox_size[0][0], expandedbox_size[1][0])
+    # plt.ylim(expandedbox_size[0][1], expandedbox_size[1][1])
+    # plt.show()
 
+    # Keep the points within expandby
+    center = (0.5*(boxsize[0][0]+boxsize[1][0]), 0.5*(boxsize[0][1]+boxsize[1][1]))
+    
 
 #    padded_points = pad_points(sheared_points)
 #    stripped_points = strip_points(padded_points)
@@ -414,7 +419,7 @@ if __name__ == '__main__':
     average_d = np.sqrt((xmax-xmin)*(ymax-ymin)/len(points))/2
     boxsize = [(xmin - average_d, ymin - average_d), (xmax + average_d, ymax + average_d)]
 
-    expanded_coordinates = unitcell_expand(boxsize, coordinates, shear=-1)
+    expanded_coordinates = unitcell_expand(boxsize, coordinates, shear=1, expandby=1.1)
 
 #    inputfile = "par_D2N500VF0.78Bidi1.4_0.5Square_18_nobrownian_2D_stress1.5r.dat"
 #    snapshots = read_coordinates_par(inputfile)
